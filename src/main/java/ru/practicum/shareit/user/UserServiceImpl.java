@@ -3,10 +3,8 @@ package ru.practicum.shareit.user;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.user.dto.UserDto;
 
@@ -35,6 +33,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto update(Long id, UserDto userDto) {
         final User existing = userExist(id);
+        if (userRepository.existingUserEmail(UserMapper.toUser(userDto))){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже существует в БД");
+        }
         if (userDto.getName() != null) {
             existing.setName(userDto.getName());
         }
