@@ -3,6 +3,7 @@ package ru.practicum.shareit.item;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +19,7 @@ import ru.practicum.shareit.item.service.ItemService;
 /**
  * REST-контроллер для вещей.
  */
+@Slf4j
 @RestController
 @RequestMapping("/items")
 public class ItemController {
@@ -29,27 +31,32 @@ public class ItemController {
 
     @PostMapping
     public ItemDto create(@RequestHeader("X-Sharer-User-Id") Long ownerId,@Valid @RequestBody ItemDto itemDto) {
+        log.info("Создание вещи: {}", itemDto);
         return itemService.create(ownerId, itemDto);
     }
 
     @PatchMapping("/{itemId}")
     public ItemDto update(@RequestHeader("X-Sharer-User-Id") Long ownerId, @PathVariable Long itemId,
                           @RequestBody ItemDto itemDto) {
+        log.info("Обновление вещи с ID {}: {}", itemId, itemDto);
         return itemService.update(ownerId, itemId, itemDto);
     }
 
     @GetMapping("/{itemId}")
     public ItemDto getById(@RequestHeader("X-Sharer-User-Id") Long requesterId, @PathVariable Long itemId) {
+        log.info("Получение вещи с ID {}", itemId);
         return itemService.getById(requesterId, itemId);
     }
 
     @GetMapping
     public List<ItemDto> getOwnerItems(@RequestHeader("X-Sharer-User-Id") Long ownerId) {
+        log.info("Получение списка вещей владельца с ID {}", ownerId);
         return itemService.getOwnerItems(ownerId);
     }
 
     @GetMapping("/search")
     public List<ItemDto> search(@RequestParam String text) {
+        log.info("Получение списка вещей по тексту: {}", text);
         return itemService.search(text);
     }
 }

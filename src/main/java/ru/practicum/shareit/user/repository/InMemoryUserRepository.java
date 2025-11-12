@@ -1,4 +1,4 @@
-package ru.practicum.shareit.user;
+package ru.practicum.shareit.user.repository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Repository;
+import ru.practicum.shareit.user.model.User;
 
 /**
  * Репозиторий пользователей в оперативке.

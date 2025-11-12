@@ -4,13 +4,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
-import ru.practicum.shareit.user.UserRepository;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 /**
  * Реализация сервиса вещей.
@@ -78,11 +77,19 @@ public class ItemServiceImpl implements ItemService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public void deleteById(Long itemId) {
+        itemRepository.deleteById(itemId);
+    }
+
+    @Override
+    public void deleteAllByOwnerId(Long ownerId) {
+        itemRepository.deleteAllByOwnerId(ownerId);
+
+    }
+
     private void ensureUserExists(Long userId) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
-    }
-
-    private void validateNewItem(ItemDto itemDto) {
     }
 }

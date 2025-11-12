@@ -76,4 +76,14 @@ public class InMemoryItemRepository implements ItemRepository {
         result.sort((a, b) -> Long.compare(a.getId(), b.getId()));
         return result;
     }
+
+    @Override
+    public void deleteById(Long itemId) {
+        items.remove(itemId);
+    }
+
+    @Override
+    public void deleteAllByOwnerId(Long ownerId) {
+        items.values().removeIf(item -> ownerId.equals(item.getOwnerId()));
+    }
 }
