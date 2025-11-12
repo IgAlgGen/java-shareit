@@ -7,7 +7,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
- * TODO Sprint add-controllers.
  * Пользователь сервиса ShareIt.
  */
 @NoArgsConstructor
