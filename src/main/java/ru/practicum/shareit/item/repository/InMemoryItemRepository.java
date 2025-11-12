@@ -3,7 +3,6 @@ package ru.practicum.shareit.item.repository;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -19,7 +18,7 @@ public class InMemoryItemRepository implements ItemRepository {
     private final Map<Long, Item> items;
     private final AtomicLong sequence;
 
-    public InMemoryItemRepository () {
+    public InMemoryItemRepository() {
         this.items = new HashMap<>();
         this.sequence = new AtomicLong(1);
     }

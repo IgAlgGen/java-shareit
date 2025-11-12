@@ -1,0 +1,186 @@
+package ru.practicum.shareit.item.service;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemMapper;
+import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.repository.UserRepository;
+
+@ExtendWith(MockitoExtension.class)
+class ItemServiceImplTest {
+    @Mock
+    private ItemRepository itemRepository;
+    @Mock
+    private UserRepository userRepository;
+
+    private ItemServiceImpl itemService;
+
+    @BeforeEach
+    void setUp() {
+        itemService = new ItemServiceImpl(itemRepository, userRepository);
+    }
+
+    @Test
+    void create_shouldPersistItemWithOwner() {
+        Long ownerId = 3L;
+        ItemDto dto = new ItemDto(null, "Дрель", "Сильная", true, null);
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(new User(ownerId, "Иван", "ivan@example.com")));
+        when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> {
+            Item argument = invocation.getArgument(0);
+            argument.setId(5L);
+            return argument;
+        });
+
+        ItemDto result = itemService.create(ownerId, dto);
+
+        assertEquals(5L, result.getId());
+        assertEquals("Дрель", result.getName());
+        assertEquals("Сильная", result.getDescription());
+        ArgumentCaptor<Item> captor = ArgumentCaptor.forClass(Item.class);
+        verify(itemRepository).save(captor.capture());
+        assertEquals(ownerId, captor.getValue().getOwnerId());
+    }
+
+    @Test
+    void create_shouldFailWhenOwnerMissing() {
+        when(userRepository.findById(77L)).thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> itemService.create(77L, new ItemDto(null, "Дрель", "Сильная", true, null)));
+
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        verify(itemRepository, never()).save(any(Item.class));
+    }
+
+    @Test
+    void update_shouldMergeChangesWhenOwnerMatches() {
+        Long ownerId = 2L;
+        Long itemId = 9L;
+        Item stored = new Item(itemId, "Прежнее", "Прежнее описание", true, ownerId, null);
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(new User(ownerId, "Owner", "owner@example.com")));
+        when(itemRepository.findById(itemId)).thenReturn(Optional.of(stored));
+        when(itemRepository.update(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ItemDto patch = new ItemDto(null, "Новое", "Новое описание", false, null);
+        ItemDto result = itemService.update(ownerId, itemId, patch);
+
+        assertEquals(itemId, result.getId());
+        assertEquals("Новое", result.getName());
+        assertEquals("Новое описание", result.getDescription());
+        assertFalse(result.getAvailable());
+        verify(itemRepository).update(stored);
+    }
+
+    @Test
+    void update_shouldThrowWhenOwnerDoesNotMatch() {
+        Long ownerId = 1L;
+        Item stored = new Item(4L, "Старое", "Старое описание", true, 999L, null);
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(new User(ownerId, "Иван", "ivan@example.com")));
+        when(itemRepository.findById(4L)).thenReturn(Optional.of(stored));
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> itemService.update(ownerId, 4L, new ItemDto(null, "Новое", null, null, null)));
+
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+    }
+
+    @Test
+    void update_shouldThrowWhenItemMissing() {
+        Long ownerId = 1L;
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(new User(ownerId, "Иван", "ivan@example.com")));
+        when(itemRepository.findById(4L)).thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> itemService.update(ownerId, 4L, new ItemDto(null, "Новое", null, null, null)));
+
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+    }
+
+    @Test
+    void getById_shouldReturnDtoWhenEverythingExists() {
+        Long requesterId = 1L;
+        Long itemId = 3L;
+        Item entity = new Item(itemId, "Вещь", "Описание", true, 1L, null);
+        when(userRepository.findById(requesterId)).thenReturn(Optional.of(new User(requesterId, "Иван", "ivan@example.com")));
+        when(itemRepository.findById(itemId)).thenReturn(Optional.of(entity));
+
+        ItemDto result = itemService.getById(requesterId, itemId);
+
+        assertEquals(ItemMapper.toDto(entity), result);
+    }
+
+    @Test
+    void getById_shouldThrowWhenRequesterMissing() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> itemService.getById(1L, 2L));
+
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+    }
+
+    @Test
+    void getOwnerItems_shouldReturnSortedDtos() {
+        Long ownerId = 2L;
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(new User(ownerId, "Иван", "ivan@example.com")));
+        List<Item> items = List.of(
+                new Item(10L, "Вещь1", "Описание1", true, ownerId, null),
+                new Item(11L, "Вещь2", "Описание2", true, ownerId, null)
+        );
+        when(itemRepository.findByOwnerId(ownerId)).thenReturn(items);
+
+        List<ItemDto> result = itemService.getOwnerItems(ownerId);
+
+        assertEquals(2, result.size());
+        assertEquals(ItemMapper.toDto(items.get(0)), result.get(0));
+        assertEquals(ItemMapper.toDto(items.get(1)), result.get(1));
+    }
+
+    @Test
+    void search_shouldMapResultsFromRepository() {
+        List<Item> items = List.of(
+                new Item(1L, "Вещь1", "Описание1", true, 1L, null),
+                new Item(2L, "Вещь2", "Описание2", true, 2L, null)
+        );
+        when(itemRepository.search("вещь")).thenReturn(items);
+
+        List<ItemDto> result = itemService.search("вещь");
+
+        assertEquals(2, result.size());
+        assertEquals(ItemMapper.toDto(items.get(0)), result.get(0));
+        assertEquals(ItemMapper.toDto(items.get(1)), result.get(1));
+    }
+
+    @Test
+    void deleteById_shouldDelegateToRepository() {
+        itemService.deleteById(5L);
+
+        verify(itemRepository).deleteById(5L);
+    }
+
+    @Test
+    void deleteAllByOwnerId_shouldDelegateToRepository() {
+        itemService.deleteAllByOwnerId(9L);
+
+        verify(itemRepository).deleteAllByOwnerId(9L);
+    }
+}

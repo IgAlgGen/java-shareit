@@ -25,7 +25,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto create(UserDto userDto) {
         User user = UserMapper.toUser(userDto);
-        if (userRepository.existingUserEmail(user)){
+        if (userRepository.existingUserEmail(user)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже существует в БД");
         }
         user.setId(null);
@@ -36,7 +36,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto update(Long id, UserDto userDto) {
         final User existing = userExist(id);
-        if (userRepository.existingUserEmail(UserMapper.toUser(userDto))){
+        if (userRepository.existingUserEmail(UserMapper.toUser(userDto))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже существует в БД");
         }
         if (userDto.getName() != null) {
