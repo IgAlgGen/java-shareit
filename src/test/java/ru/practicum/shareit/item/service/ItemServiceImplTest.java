@@ -13,6 +13,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -31,12 +32,13 @@ class ItemServiceImplTest {
     private ItemRepository itemRepository;
     @Mock
     private UserRepository userRepository;
-
     private ItemServiceImpl itemService;
+    private ItemMapper itemMapper;
 
     @BeforeEach
     void setUp() {
-        itemService = new ItemServiceImpl(itemRepository, userRepository);
+        itemMapper = Mappers.getMapper(ItemMapper.class);
+        itemService = new ItemServiceImpl(itemRepository, userRepository, itemMapper);
     }
 
     @Test
@@ -125,7 +127,7 @@ class ItemServiceImplTest {
 
         ItemDto result = itemService.getById(requesterId, itemId);
 
-        assertEquals(ItemMapper.toDto(entity), result);
+        assertEquals(itemMapper.toDto(entity), result);
     }
 
     @Test
@@ -151,8 +153,8 @@ class ItemServiceImplTest {
         List<ItemDto> result = itemService.getOwnerItems(ownerId);
 
         assertEquals(2, result.size());
-        assertEquals(ItemMapper.toDto(items.get(0)), result.get(0));
-        assertEquals(ItemMapper.toDto(items.get(1)), result.get(1));
+        assertEquals(itemMapper.toDto(items.get(0)), result.get(0));
+        assertEquals(itemMapper.toDto(items.get(1)), result.get(1));
     }
 
     @Test
@@ -166,8 +168,8 @@ class ItemServiceImplTest {
         List<ItemDto> result = itemService.search("вещь");
 
         assertEquals(2, result.size());
-        assertEquals(ItemMapper.toDto(items.get(0)), result.get(0));
-        assertEquals(ItemMapper.toDto(items.get(1)), result.get(1));
+        assertEquals(itemMapper.toDto(items.get(0)), result.get(0));
+        assertEquals(itemMapper.toDto(items.get(1)), result.get(1));
     }
 
     @Test

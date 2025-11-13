@@ -1,25 +1,16 @@
 package ru.practicum.shareit.user.dto;
 
+import org.mapstruct.Mapper;
+import org.mapstruct.NullValueCheckStrategy;
 import ru.practicum.shareit.user.model.User;
 
 /**
  * Маппер пользователя.
  */
-public final class UserMapper {
-    private UserMapper() {
-    }
+@Mapper(componentModel = "spring", nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
+public interface UserMapper {
 
-    public static UserDto toDto(User user) {
-        if (user == null) {
-            return null;
-        }
-        return new UserDto(user.getId(), user.getName(), user.getEmail());
-    }
+    UserDto toDto(User user);
 
-    public static User toUser(UserDto userDto) {
-        if (userDto == null) {
-            return null;
-        }
-        return new User(userDto.getId(), userDto.getName(), userDto.getEmail());
-    }
+    User toUser(UserDto userDto);
 }

@@ -5,14 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import ru.practicum.shareit.item.model.Item;
 
 class ItemMapperTest {
+    private final ItemMapper itemMapper = Mappers.getMapper(ItemMapper.class);
+
     @Test
     void toDto_shouldConvertEntity() {
         Item item = new Item(1L, "Дрель", "Сильная", true, 2L, 3L);
 
-        ItemDto dto = ItemMapper.toDto(item);
+        ItemDto dto = itemMapper.toDto(item);
 
         assertEquals(1L, dto.getId());
         assertEquals("Дрель", dto.getName());
@@ -23,14 +26,14 @@ class ItemMapperTest {
 
     @Test
     void toDto_shouldReturnNullForNullInput() {
-        assertNull(ItemMapper.toDto(null));
+        assertNull(itemMapper.toDto(null));
     }
 
     @Test
     void toItem_shouldConvertDto() {
         ItemDto dto = new ItemDto(1L, "Дрель", "Сильная", true, 3L);
 
-        Item item = ItemMapper.toItem(dto);
+        Item item = itemMapper.toItem(dto);
 
         assertEquals(1L, item.getId());
         assertEquals("Дрель", item.getName());
@@ -42,6 +45,6 @@ class ItemMapperTest {
 
     @Test
     void toItem_shouldReturnNullForNullInput() {
-        assertNull(ItemMapper.toItem(null));
+        assertNull(itemMapper.toItem(null));
     }
 }

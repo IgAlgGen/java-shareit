@@ -17,26 +17,28 @@ import ru.practicum.shareit.user.repository.UserRepository;
 @Service
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
+        this.userMapper = userMapper;
     }
 
     @Override
     public UserDto create(UserDto userDto) {
-        User user = UserMapper.toUser(userDto);
+        User user = userMapper.toUser(userDto);
         if (userRepository.existingUserEmail(user)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже существует в БД");
         }
         user.setId(null);
         User saved = userRepository.save(user);
-        return UserMapper.toDto(saved);
+        return userMapper.toDto(saved);
     }
 
     @Override
     public UserDto update(Long id, UserDto userDto) {
         final User existing = userExist(id);
-        if (userRepository.existingUserEmail(UserMapper.toUser(userDto))) {
+        if (userRepository.existingUserEmail(userMapper.toUser(userDto))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже существует в БД");
         }
         if (userDto.getName() != null) {
@@ -46,19 +48,19 @@ public class UserServiceImpl implements UserService {
             existing.setEmail(userDto.getEmail());
         }
         User saved = userRepository.update(existing);
-        return UserMapper.toDto(saved);
+        return userMapper.toDto(saved);
     }
 
     @Override
     public UserDto getById(Long id) {
         final User user = userExist(id);
-        return UserMapper.toDto(user);
+        return userMapper.toDto(user);
     }
 
     @Override
     public List<UserDto> getAll() {
         return userRepository.findAll().stream()
-                .map(UserMapper::toDto)
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 

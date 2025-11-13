@@ -13,6 +13,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -28,12 +29,13 @@ import ru.practicum.shareit.user.service.UserServiceImpl;
 class UserServiceImplTest {
     @Mock
     private UserRepository userRepository;
-
     private UserServiceImpl userService;
+    private UserMapper userMapper;
 
     @BeforeEach
     void setUp() {
-        userService = new UserServiceImpl(userRepository);
+        userMapper = Mappers.getMapper(UserMapper.class);
+        userService = new UserServiceImpl(userRepository, userMapper);
     }
 
     @Test
@@ -117,7 +119,7 @@ class UserServiceImplTest {
 
         UserDto result = userService.getById(5L);
 
-        assertEquals(UserMapper.toDto(entity), result);
+        assertEquals(userMapper.toDto(entity), result);
     }
 
     @Test
@@ -131,8 +133,8 @@ class UserServiceImplTest {
         List<UserDto> result = userService.getAll();
 
         assertEquals(2, result.size());
-        assertTrue(result.contains(UserMapper.toDto(users.get(0))));
-        assertTrue(result.contains(UserMapper.toDto(users.get(1))));
+        assertTrue(result.contains(userMapper.toDto(users.get(0))));
+        assertTrue(result.contains(userMapper.toDto(users.get(1))));
     }
 
     @Test

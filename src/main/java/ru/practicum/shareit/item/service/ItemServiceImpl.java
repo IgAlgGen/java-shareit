@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,19 +19,21 @@ import ru.practicum.shareit.user.repository.UserRepository;
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final ItemMapper itemMapper;
 
-    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository) {
+    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository, ItemMapper itemMapper) {
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
+        this.itemMapper = itemMapper;
     }
 
     @Override
     public ItemDto create(Long ownerId, ItemDto itemDto) {
         ensureUserExists(ownerId);
-        Item item = ItemMapper.toItem(itemDto);
+        Item item = itemMapper.toItem(itemDto);
         item.setOwnerId(ownerId);
         Item saved = itemRepository.save(item);
-        return ItemMapper.toDto(saved);
+        return itemMapper.toDto(saved);
     }
 
     @Override
@@ -41,17 +44,15 @@ public class ItemServiceImpl implements ItemService {
         if (!ownerId.equals(item.getOwnerId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Вещь не принадлежит пользователю");
         }
-        if (itemDto.getName() != null) {
-            item.setName(itemDto.getName());
-        }
-        if (itemDto.getDescription() != null) {
-            item.setDescription(itemDto.getDescription());
-        }
-        if (itemDto.getAvailable() != null) {
-            item.setAvailable(itemDto.getAvailable());
-        }
+        String name = Objects.nonNull(itemDto.getName()) ? itemDto.getName() : item.getName();
+        String description = Objects.nonNull(itemDto.getDescription()) ? itemDto.getDescription() : item.getDescription();
+        Boolean available = Objects.nonNull(itemDto.getAvailable()) ? itemDto.getAvailable() : item.getAvailable();
+        item.setName(name);
+        item.setDescription(description);
+        item.setAvailable(available);
+
         Item saved = itemRepository.update(item);
-        return ItemMapper.toDto(saved);
+        return itemMapper.toDto(saved);
     }
 
     @Override
@@ -59,21 +60,21 @@ public class ItemServiceImpl implements ItemService {
         ensureUserExists(requesterId);
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Вещь не найдена"));
-        return ItemMapper.toDto(item);
+        return itemMapper.toDto(item);
     }
 
     @Override
     public List<ItemDto> getOwnerItems(Long ownerId) {
         ensureUserExists(ownerId);
         return itemRepository.findByOwnerId(ownerId).stream()
-                .map(ItemMapper::toDto)
+                .map(itemMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<ItemDto> search(String text) {
         return itemRepository.search(text).stream()
-                .map(ItemMapper::toDto)
+                .map(itemMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -85,7 +86,6 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public void deleteAllByOwnerId(Long ownerId) {
         itemRepository.deleteAllByOwnerId(ownerId);
-
     }
 
     private void ensureUserExists(Long userId) {

@@ -24,7 +24,7 @@ public class InMemoryItemRepository implements ItemRepository {
     }
 
     @Override
-    public synchronized Item save(Item item) {
+    public Item save(Item item) {
         if (item.getId() == null) {
             item.setId(sequence.incrementAndGet());
         }
@@ -39,12 +39,12 @@ public class InMemoryItemRepository implements ItemRepository {
     }
 
     @Override
-    public synchronized Optional<Item> findById(Long id) {
+    public Optional<Item> findById(Long id) {
         return Optional.ofNullable(items.get(id));
     }
 
     @Override
-    public synchronized List<Item> findByOwnerId(Long ownerId) {
+    public List<Item> findByOwnerId(Long ownerId) {
         List<Item> result = new ArrayList<>();
         for (Item item : items.values()) {
             if (ownerId.equals(item.getOwnerId())) {
@@ -56,7 +56,7 @@ public class InMemoryItemRepository implements ItemRepository {
     }
 
     @Override
-    public synchronized List<Item> search(String text) {
+    public List<Item> search(String text) {
         if (!StringUtils.hasText(text)) {
             return List.of();
         }
