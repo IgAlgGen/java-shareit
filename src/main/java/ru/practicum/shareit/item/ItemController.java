@@ -25,33 +25,33 @@ import ru.practicum.shareit.item.service.ItemService;
 public class ItemController {
     private final ItemService itemService;
 
-    private final String OWNER_ID_HEADER = "X-Sharer-User-Id";
+    private final String ownerIdHeader = "X-Sharer-User-Id";
 
     public ItemController(ItemService itemService) {
         this.itemService = itemService;
     }
 
     @PostMapping
-    public ItemDto create(@RequestHeader(OWNER_ID_HEADER) Long ownerId,@Valid @RequestBody ItemDto itemDto) {
+    public ItemDto create(@RequestHeader(ownerIdHeader) Long ownerId, @Valid @RequestBody ItemDto itemDto) {
         log.info("Создание вещи: {}", itemDto);
         return itemService.create(ownerId, itemDto);
     }
 
     @PatchMapping("/{itemId}")
-    public ItemDto update(@RequestHeader(OWNER_ID_HEADER) Long ownerId, @PathVariable Long itemId,
+    public ItemDto update(@RequestHeader(ownerIdHeader) Long ownerId, @PathVariable Long itemId,
                           @RequestBody ItemDto itemDto) {
         log.info("Обновление вещи с ID {}: {}", itemId, itemDto);
         return itemService.update(ownerId, itemId, itemDto);
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto getById(@RequestHeader(OWNER_ID_HEADER) Long requesterId, @PathVariable Long itemId) {
+    public ItemDto getById(@RequestHeader(ownerIdHeader) Long requesterId, @PathVariable Long itemId) {
         log.info("Получение вещи с ID {}", itemId);
         return itemService.getById(requesterId, itemId);
     }
 
     @GetMapping
-    public List<ItemDto> getOwnerItems(@RequestHeader(OWNER_ID_HEADER) Long ownerId) {
+    public List<ItemDto> getOwnerItems(@RequestHeader(ownerIdHeader) Long ownerId) {
         log.info("Получение списка вещей владельца с ID {}", ownerId);
         return itemService.getOwnerItems(ownerId);
     }
