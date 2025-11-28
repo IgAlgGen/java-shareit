@@ -42,7 +42,6 @@ public class Item {
     @Column(name = "is_available", nullable = false)
     private Boolean available;
 
-    @ManyToOne
     @Column(name = "owner_id")
     private Long ownerId;
 
