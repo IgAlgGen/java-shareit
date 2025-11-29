@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
@@ -51,7 +52,7 @@ public class ItemServiceImpl implements ItemService {
         item.setDescription(description);
         item.setAvailable(available);
 
-        Item saved = itemRepository.update(item);
+        Item saved = itemRepository.save(item);
         return itemMapper.toDto(saved);
     }
 
@@ -66,13 +67,16 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<ItemDto> getOwnerItems(Long ownerId) {
         ensureUserExists(ownerId);
-        return itemRepository.findByOwnerId(ownerId).stream()
+        return itemRepository.findAllByOwnerIdOrderById(ownerId).stream()
                 .map(itemMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<ItemDto> search(String text) {
+        if (!StringUtils.hasText(text)) {
+            return List.of();
+        }
         return itemRepository.search(text).stream()
                 .map(itemMapper::toDto)
                 .collect(Collectors.toList());

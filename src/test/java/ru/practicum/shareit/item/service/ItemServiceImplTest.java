@@ -80,7 +80,7 @@ class ItemServiceImplTest {
         Item stored = new Item(itemId, "Прежнее", "Прежнее описание", true, ownerId, null);
         when(userRepository.findById(ownerId)).thenReturn(Optional.of(new User(ownerId, "Owner", "owner@example.com")));
         when(itemRepository.findById(itemId)).thenReturn(Optional.of(stored));
-        when(itemRepository.update(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ItemDto patch = new ItemDto(null, "Новое", "Новое описание", false, null);
         ItemDto result = itemService.update(ownerId, itemId, patch);
@@ -89,7 +89,7 @@ class ItemServiceImplTest {
         assertEquals("Новое", result.getName());
         assertEquals("Новое описание", result.getDescription());
         assertFalse(result.getAvailable());
-        verify(itemRepository).update(stored);
+        verify(itemRepository).save(stored);
     }
 
     @Test
@@ -148,7 +148,7 @@ class ItemServiceImplTest {
                 new Item(10L, "Вещь1", "Описание1", true, ownerId, null),
                 new Item(11L, "Вещь2", "Описание2", true, ownerId, null)
         );
-        when(itemRepository.findByOwnerId(ownerId)).thenReturn(items);
+        when(itemRepository.findAllByOwnerIdOrderById(ownerId)).thenReturn(items);
 
         List<ItemDto> result = itemService.getOwnerItems(ownerId);
 
