@@ -77,11 +77,16 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDetailsDto getById(Long requesterId, Long itemId) {
+    public ItemWithBookingsDto getById(Long requesterId, Long itemId) {
         ensureUserExists(requesterId);
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Вещь не найдена"));
-        return toDetailsDto(item);
+        List<CommentDto> comments = getCommentsForItem(item.getId());
+        if (item.getOwnerId().equals(requesterId)) {
+            return toItemWithBookings(item, comments);
+        }
+        return new ItemWithBookingsDto(item.getId(), item.getName(), item.getDescription(), item.getAvailable(),
+                item.getRequestId(), null, null, comments);
     }
 
     @Override
@@ -97,7 +102,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDetailsDto> search(String text) {
+    public List<ItemWithBookingsDto> search(String text) {
         if (!StringUtils.hasText(text)) {
             return List.of();
         }
@@ -106,7 +111,7 @@ public class ItemServiceImpl implements ItemService {
                 .map(Item::getId)
                 .collect(Collectors.toList()));
         return items.stream()
-                .map(item -> toDetailsDto(item, comments.getOrDefault(item.getId(), List.of())))
+                .map(item -> toItemWithBookings(item, comments.getOrDefault(item.getId(), List.of())))
                 .collect(Collectors.toList());
     }
 
