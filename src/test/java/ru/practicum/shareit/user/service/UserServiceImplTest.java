@@ -1,4 +1,4 @@
-package ru.practicum.shareit.user.repository.service;
+package ru.practicum.shareit.user.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
