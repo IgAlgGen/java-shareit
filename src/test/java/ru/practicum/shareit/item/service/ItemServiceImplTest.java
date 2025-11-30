@@ -142,9 +142,9 @@ class ItemServiceImplTest {
         when(itemRepository.findById(itemId)).thenReturn(Optional.of(entity));
         when(commentRepository.findByItem_IdOrderByCreatedAsc(itemId)).thenReturn(List.of());
 
-        ItemDetailsDto result = itemService.getById(requesterId, itemId);
+        ItemWithBookingsDto result = itemService.getById(requesterId, itemId);
 
-        assertEquals(new ItemDetailsDto(itemId, "Вещь", "Описание", true, null, List.of()), result);
+        assertEquals(new ItemWithBookingsDto(itemId, "Вещь", "Описание", true, null, null,null, List.of()), result);
     }
 
     @Test
@@ -209,11 +209,11 @@ class ItemServiceImplTest {
         when(itemRepository.search("вещь")).thenReturn(items);
         when(commentRepository.findByItem_IdInOrderByCreatedAsc(any())).thenReturn(List.of());
 
-        List<ItemDetailsDto> result = itemService.search("вещь");
+        List<ItemWithBookingsDto> result = itemService.search("вещь");
 
         assertEquals(2, result.size());
-        assertEquals(new ItemDetailsDto(1L, "Вещь1", "Описание1", true, null, List.of()), result.get(0));
-        assertEquals(new ItemDetailsDto(2L, "Вещь2", "Описание2", true, null, List.of()), result.get(1));
+        assertEquals(new ItemWithBookingsDto(1L, "Вещь1", "Описание1", true, null,null,null, List.of()), result.get(0));
+        assertEquals(new ItemWithBookingsDto(2L, "Вещь2", "Описание2", true, null, null, null, List.of()), result.get(1));
     }
 
     @Test
