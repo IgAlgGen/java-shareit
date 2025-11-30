@@ -7,11 +7,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Sort;
 import org.springframework.util.StringUtils;
-import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
@@ -21,6 +19,8 @@ import ru.practicum.shareit.item.dto.ItemDetailsDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.dto.ItemWithBookingsDto;
+import ru.practicum.shareit.exception.BadRequestException;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
@@ -61,9 +61,9 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto update(Long ownerId, Long itemId, ItemDto itemDto) {
         ensureUserExists(ownerId);
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Вещь не найдена"));
+                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
         if (!ownerId.equals(item.getOwnerId())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Вещь не принадлежит пользователю");
+            throw new NotFoundException("Вещь не принадлежит пользователю");
         }
         String name = Objects.nonNull(itemDto.getName()) ? itemDto.getName() : item.getName();
         String description = Objects.nonNull(itemDto.getDescription()) ? itemDto.getDescription() : item.getDescription();
@@ -80,7 +80,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemWithBookingsDto getById(Long requesterId, Long itemId) {
         ensureUserExists(requesterId);
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Вещь не найдена"));
+                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
         List<CommentDto> comments = getCommentsForItem(item.getId());
         if (item.getOwnerId().equals(requesterId)) {
             return toItemWithBookings(item, comments);
@@ -128,14 +128,14 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public CommentDto addComment(Long authorId, Long itemId, CommentDto commentDto) {
         User author = userRepository.findById(authorId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Вещь не найдена"));
+                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
         LocalDateTime now = LocalDateTime.now();
         boolean hadBooking = bookingRepository.existsByBooker_IdAndItem_IdAndEndIsBeforeAndStatus(authorId, itemId,
                 now, BookingStatus.APPROVED);
         if (!hadBooking) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            throw new BadRequestException(
                     "Только арендаторы после окончания бронирования могут оставлять комментарии");
         }
 
@@ -151,7 +151,7 @@ public class ItemServiceImpl implements ItemService {
 
     private void ensureUserExists(Long userId) {
         userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
     }
 
     private ItemDetailsDto toDetailsDto(Item item) {

@@ -2,9 +2,9 @@ package ru.practicum.shareit.user.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import ru.practicum.shareit.exception.ConflictException;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.model.User;
@@ -27,7 +27,7 @@ public class UserServiceImpl implements UserService {
     public UserDto create(UserDto userDto) {
         User user = userMapper.toUser(userDto);
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже существует в БД");
+            throw new ConflictException("Email уже существует в БД");
         }
         user.setId(null);
         User saved = userRepository.save(user);
@@ -38,7 +38,7 @@ public class UserServiceImpl implements UserService {
     public UserDto update(Long id, UserDto userDto) {
         final User existing = userExist(id);
         if (userDto.getEmail() != null && userRepository.existsByEmail(userDto.getEmail())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже существует в БД");
+            throw new ConflictException("Email уже существует в БД");
         }
         if (userDto.getName() != null) {
             existing.setName(userDto.getName());
@@ -71,6 +71,6 @@ public class UserServiceImpl implements UserService {
 
     private User userExist(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
     }
 }

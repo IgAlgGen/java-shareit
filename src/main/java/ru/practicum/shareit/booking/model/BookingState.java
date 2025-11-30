@@ -1,7 +1,6 @@
 package ru.practicum.shareit.booking.model;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import ru.practicum.shareit.exception.BadRequestException;
 
 /**
  * Возможные состояния выборки бронирований.
@@ -18,7 +17,7 @@ public enum BookingState {
         try {
             return BookingState.valueOf(value.toUpperCase());
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown state: " + value);
+            throw new BadRequestException("Неизвестное состояние бронирования: " + value);
         }
     }
 }
