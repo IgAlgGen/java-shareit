@@ -11,7 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.shareit.item.dto.CommentDto;
-import ru.practicum.shareit.item.dto.ItemDetailsDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemWithBookingsDto;
 import ru.practicum.shareit.item.service.ItemService;
@@ -54,10 +53,11 @@ class ItemControllerTest {
 
     @Test
     void getById_shouldReturnServiceResult() {
-        ItemDetailsDto response = new ItemDetailsDto(2L, "Дрель", "Сильная", true, null, List.of());
+        ItemWithBookingsDto response = new ItemWithBookingsDto(1L, "Дрель", "Сильная", true,
+                null, null, null, List.of());
         when(itemService.getById(1L, 2L)).thenReturn(response);
 
-        ItemDetailsDto result = controller.getById(1L, 2L);
+        ItemWithBookingsDto result = controller.getById(1L, 2L);
 
         assertEquals(response, result);
         verify(itemService).getById(1L, 2L);
@@ -77,10 +77,11 @@ class ItemControllerTest {
 
     @Test
     void search_shouldReturnServiceResult() {
-        List<ItemDetailsDto> items = List.of(new ItemDetailsDto(1L, "Дрель", "Сильная", true, null, List.of()));
+        List<ItemWithBookingsDto> items = List.of(new ItemWithBookingsDto(1L, "Дрель", "Сильная", true,
+                null, null, null, List.of()));
         when(itemService.search("text")).thenReturn(items);
 
-        List<ItemDetailsDto> result = controller.search("text");
+        List<ItemWithBookingsDto> result = controller.search("text");
 
         assertEquals(items, result);
         verify(itemService).search("text");
