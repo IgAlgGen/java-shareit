@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,10 +18,16 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.item.dto.ItemDetailsDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
+import ru.practicum.shareit.item.dto.ItemWithBookingsDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
@@ -32,13 +39,15 @@ class ItemServiceImplTest {
     private ItemRepository itemRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private BookingRepository bookingRepository;
     private ItemServiceImpl itemService;
     private ItemMapper itemMapper;
 
     @BeforeEach
     void setUp() {
         itemMapper = Mappers.getMapper(ItemMapper.class);
-        itemService = new ItemServiceImpl(itemRepository, userRepository, itemMapper);
+        itemService = new ItemServiceImpl(itemRepository, userRepository, itemMapper, bookingRepository);
     }
 
     @Test
@@ -125,9 +134,9 @@ class ItemServiceImplTest {
         when(userRepository.findById(requesterId)).thenReturn(Optional.of(new User(requesterId, "Иван", "ivan@example.com")));
         when(itemRepository.findById(itemId)).thenReturn(Optional.of(entity));
 
-        ItemDto result = itemService.getById(requesterId, itemId);
+        ItemDetailsDto result = itemService.getById(requesterId, itemId);
 
-        assertEquals(itemMapper.toDto(entity), result);
+        assertEquals(new ItemDetailsDto(itemId, "Вещь", "Описание", true, null), result);
     }
 
     @Test
@@ -149,12 +158,36 @@ class ItemServiceImplTest {
                 new Item(11L, "Вещь2", "Описание2", true, ownerId, null)
         );
         when(itemRepository.findAllByOwnerIdOrderById(ownerId)).thenReturn(items);
+        when(bookingRepository.findByItem_Id(any(Long.class), any(Sort.class))).thenReturn(List.of());
 
-        List<ItemDto> result = itemService.getOwnerItems(ownerId);
+        List<ItemWithBookingsDto> result = itemService.getOwnerItems(ownerId);
 
         assertEquals(2, result.size());
-        assertEquals(itemMapper.toDto(items.get(0)), result.get(0));
-        assertEquals(itemMapper.toDto(items.get(1)), result.get(1));
+        assertEquals(new ItemWithBookingsDto(10L, "Вещь1", "Описание1", true, null, null, null), result.get(0));
+        assertEquals(new ItemWithBookingsDto(11L, "Вещь2", "Описание2", true, null, null, null), result.get(1));
+    }
+
+    @Test
+    void getOwnerItems_shouldFillLastAndNextBookings() {
+        Long ownerId = 3L;
+        Item item = new Item(5L, "Вещь", "Описание", true, ownerId, null);
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(new User(ownerId, "Иван", "ivan@example.com")));
+        when(itemRepository.findAllByOwnerIdOrderById(ownerId)).thenReturn(List.of(item));
+
+        LocalDateTime now = LocalDateTime.now();
+        Booking pastBooking = new Booking(1L, now.minusDays(3), now.minusDays(2), item, null, BookingStatus.APPROVED);
+        Booking futureBooking = new Booking(2L, now.plusDays(1), now.plusDays(2), item, null, BookingStatus.APPROVED);
+        when(bookingRepository.findByItem_Id(item.getId(), Sort.by("start")))
+                .thenReturn(List.of(pastBooking, futureBooking));
+
+        List<ItemWithBookingsDto> result = itemService.getOwnerItems(ownerId);
+
+        assertEquals(1, result.size());
+        ItemWithBookingsDto dto = result.get(0);
+        assertEquals(pastBooking.getId(), dto.getLastBooking().getId());
+        assertEquals(pastBooking.getStart(), dto.getLastBooking().getStart());
+        assertEquals(futureBooking.getId(), dto.getNextBooking().getId());
+        assertEquals(futureBooking.getStart(), dto.getNextBooking().getStart());
     }
 
     @Test
@@ -165,11 +198,11 @@ class ItemServiceImplTest {
         );
         when(itemRepository.search("вещь")).thenReturn(items);
 
-        List<ItemDto> result = itemService.search("вещь");
+        List<ItemDetailsDto> result = itemService.search("вещь");
 
         assertEquals(2, result.size());
-        assertEquals(itemMapper.toDto(items.get(0)), result.get(0));
-        assertEquals(itemMapper.toDto(items.get(1)), result.get(1));
+        assertEquals(new ItemDetailsDto(1L, "Вещь1", "Описание1", true, null), result.get(0));
+        assertEquals(new ItemDetailsDto(2L, "Вещь2", "Описание2", true, null), result.get(1));
     }
 
     @Test

@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.practicum.shareit.item.dto.ItemDetailsDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemWithBookingsDto;
 import ru.practicum.shareit.item.service.ItemService;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,10 +53,10 @@ class ItemControllerTest {
 
     @Test
     void getById_shouldReturnServiceResult() {
-        ItemDto response = new ItemDto(2L, "Дрель", "Сильная", true, null);
+        ItemDetailsDto response = new ItemDetailsDto(2L, "Дрель", "Сильная", true, null);
         when(itemService.getById(1L, 2L)).thenReturn(response);
 
-        ItemDto result = controller.getById(1L, 2L);
+        ItemDetailsDto result = controller.getById(1L, 2L);
 
         assertEquals(response, result);
         verify(itemService).getById(1L, 2L);
@@ -62,10 +64,11 @@ class ItemControllerTest {
 
     @Test
     void getOwnerItems_shouldReturnServiceResult() {
-        List<ItemDto> items = List.of(new ItemDto(1L, "Дрель", "Сильная", true, null));
+        List<ItemWithBookingsDto> items = List.of(new ItemWithBookingsDto(1L, "Дрель", "Сильная", true,
+                null, null, null));
         when(itemService.getOwnerItems(3L)).thenReturn(items);
 
-        List<ItemDto> result = controller.getOwnerItems(3L);
+        List<ItemWithBookingsDto> result = controller.getOwnerItems(3L);
 
         assertEquals(items, result);
         verify(itemService).getOwnerItems(3L);
@@ -73,10 +76,10 @@ class ItemControllerTest {
 
     @Test
     void search_shouldReturnServiceResult() {
-        List<ItemDto> items = List.of(new ItemDto(1L, "Дрель", "Сильная", true, null));
+        List<ItemDetailsDto> items = List.of(new ItemDetailsDto(1L, "Дрель", "Сильная", true, null));
         when(itemService.search("text")).thenReturn(items);
 
-        List<ItemDto> result = controller.search("text");
+        List<ItemDetailsDto> result = controller.search("text");
 
         assertEquals(items, result);
         verify(itemService).search("text");

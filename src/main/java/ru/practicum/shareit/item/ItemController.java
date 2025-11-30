@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PatchMapping;
+import ru.practicum.shareit.item.dto.ItemDetailsDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemWithBookingsDto;
 import ru.practicum.shareit.item.service.ItemService;
 
 /**
@@ -45,19 +47,19 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto getById(@RequestHeader(ownerIdHeader) Long requesterId, @PathVariable Long itemId) {
+    public ItemDetailsDto getById(@RequestHeader(ownerIdHeader) Long requesterId, @PathVariable Long itemId) {
         log.info("Получение вещи с ID {}", itemId);
         return itemService.getById(requesterId, itemId);
     }
 
     @GetMapping
-    public List<ItemDto> getOwnerItems(@RequestHeader(ownerIdHeader) Long ownerId) {
+    public List<ItemWithBookingsDto> getOwnerItems(@RequestHeader(ownerIdHeader) Long ownerId) {
         log.info("Получение списка вещей владельца с ID {}", ownerId);
         return itemService.getOwnerItems(ownerId);
     }
 
     @GetMapping("/search")
-    public List<ItemDto> search(@RequestParam String text) {
+    public List<ItemDetailsDto> search(@RequestParam String text) {
         log.info("Получение списка вещей по тексту: {}", text);
         return itemService.search(text);
     }

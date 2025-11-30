@@ -40,4 +40,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("select b from Booking b where b.item.ownerId = ?1 and b.status = ?2")
     List<Booking> findByOwnerIdAndStatus(Long ownerId, BookingStatus status, Sort sort);
+
+    List<Booking> findByItem_Id(Long itemId, Sort sort);
 }
