@@ -17,5 +17,5 @@ public class ItemRequest {
     private String description;
 
     @Column(name = "requestor_id", nullable = false)
-    private Long requestor_id;
+    private Long requestorId;
 }

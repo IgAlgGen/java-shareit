@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDetailsDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemWithBookingsDto;
@@ -53,7 +54,7 @@ class ItemControllerTest {
 
     @Test
     void getById_shouldReturnServiceResult() {
-        ItemDetailsDto response = new ItemDetailsDto(2L, "Дрель", "Сильная", true, null);
+        ItemDetailsDto response = new ItemDetailsDto(2L, "Дрель", "Сильная", true, null, List.of());
         when(itemService.getById(1L, 2L)).thenReturn(response);
 
         ItemDetailsDto result = controller.getById(1L, 2L);
@@ -65,7 +66,7 @@ class ItemControllerTest {
     @Test
     void getOwnerItems_shouldReturnServiceResult() {
         List<ItemWithBookingsDto> items = List.of(new ItemWithBookingsDto(1L, "Дрель", "Сильная", true,
-                null, null, null));
+                null, null, null, List.of()));
         when(itemService.getOwnerItems(3L)).thenReturn(items);
 
         List<ItemWithBookingsDto> result = controller.getOwnerItems(3L);
@@ -76,12 +77,24 @@ class ItemControllerTest {
 
     @Test
     void search_shouldReturnServiceResult() {
-        List<ItemDetailsDto> items = List.of(new ItemDetailsDto(1L, "Дрель", "Сильная", true, null));
+        List<ItemDetailsDto> items = List.of(new ItemDetailsDto(1L, "Дрель", "Сильная", true, null, List.of()));
         when(itemService.search("text")).thenReturn(items);
 
         List<ItemDetailsDto> result = controller.search("text");
 
         assertEquals(items, result);
         verify(itemService).search("text");
+    }
+
+    @Test
+    void addComment_shouldDelegateToService() {
+        CommentDto request = new CommentDto(null, "Отличная вещь", null, null);
+        CommentDto response = new CommentDto(1L, "Отличная вещь", "Иван", null);
+        when(itemService.addComment(5L, 2L, request)).thenReturn(response);
+
+        CommentDto result = controller.addComment(5L, 2L, request);
+
+        assertEquals(response, result);
+        verify(itemService).addComment(5L, 2L, request);
     }
 }
