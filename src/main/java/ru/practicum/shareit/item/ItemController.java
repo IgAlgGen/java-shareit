@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PatchMapping;
 import ru.practicum.shareit.item.dto.CommentDto;
-import ru.practicum.shareit.item.dto.ItemDetailsDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemWithBookingsDto;
 import ru.practicum.shareit.item.service.ItemService;
@@ -48,7 +47,7 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    public ItemDetailsDto getById(@RequestHeader(ownerIdHeader) Long requesterId, @PathVariable Long itemId) {
+    public ItemWithBookingsDto getById(@RequestHeader(ownerIdHeader) Long requesterId, @PathVariable Long itemId) {
         log.info("Получение вещи с ID {}", itemId);
         return itemService.getById(requesterId, itemId);
     }
@@ -60,7 +59,7 @@ public class ItemController {
     }
 
     @GetMapping("/search")
-    public List<ItemDetailsDto> search(@RequestParam String text) {
+    public List<ItemWithBookingsDto> search(@RequestParam String text) {
         log.info("Получение списка вещей по тексту: {}", text);
         return itemService.search(text);
     }
