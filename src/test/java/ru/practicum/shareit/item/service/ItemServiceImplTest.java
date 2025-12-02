@@ -20,8 +20,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import ru.practicum.shareit.exception.BadRequestException;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
@@ -81,10 +81,8 @@ class ItemServiceImplTest {
     void create_shouldFailWhenOwnerMissing() {
         when(userRepository.findById(77L)).thenReturn(Optional.empty());
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        assertThrows(NotFoundException.class,
                 () -> itemService.create(77L, new ItemDto(null, "Дрель", "Сильная", true, null)));
-
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
         verify(itemRepository, never()).save(any(Item.class));
     }
 
@@ -114,10 +112,8 @@ class ItemServiceImplTest {
         when(userRepository.findById(ownerId)).thenReturn(Optional.of(new User(ownerId, "Иван", "ivan@example.com")));
         when(itemRepository.findById(4L)).thenReturn(Optional.of(stored));
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        assertThrows(NotFoundException.class,
                 () -> itemService.update(ownerId, 4L, new ItemDto(null, "Новое", null, null, null)));
-
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     }
 
     @Test
@@ -126,10 +122,8 @@ class ItemServiceImplTest {
         when(userRepository.findById(ownerId)).thenReturn(Optional.of(new User(ownerId, "Иван", "ivan@example.com")));
         when(itemRepository.findById(4L)).thenReturn(Optional.empty());
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        assertThrows(NotFoundException.class,
                 () -> itemService.update(ownerId, 4L, new ItemDto(null, "Новое", null, null, null)));
-
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     }
 
     @Test
@@ -150,10 +144,8 @@ class ItemServiceImplTest {
     void getById_shouldThrowWhenRequesterMissing() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        assertThrows(NotFoundException.class,
                 () -> itemService.getById(1L, 2L));
-
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     }
 
     @Test
@@ -265,10 +257,8 @@ class ItemServiceImplTest {
         when(bookingRepository.existsByBooker_IdAndItem_IdAndEndIsBeforeAndStatus(any(), any(), any(), any()))
                 .thenReturn(false);
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        assertThrows(BadRequestException.class,
                 () -> itemService.addComment(authorId, itemId, request));
-
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         verify(commentRepository, never()).save(any(Comment.class));
     }
 }

@@ -17,8 +17,8 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import ru.practicum.shareit.exception.ConflictException;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.model.User;
@@ -64,9 +64,7 @@ class UserServiceImplTest {
         when(userRepository.existsByEmail("ivan@example.com")).thenReturn(true);
         UserDto input = new UserDto(null, "Иван", "ivan@example.com");
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> userService.create(input));
-
-        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+        assertThrows(ConflictException.class, () -> userService.create(input));
         verify(userRepository).existsByEmail("ivan@example.com");
         verifyNoMoreInteractions(userRepository);
     }
@@ -97,19 +95,15 @@ class UserServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(stored));
         when(userRepository.existsByEmail("roman@example.com")).thenReturn(true);
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        assertThrows(ConflictException.class,
                 () -> userService.update(userId, new UserDto(userId, "Роман", "roman@example.com")));
-
-        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
     }
 
     @Test
     void getById_shouldThrowNotFoundWhenUserMissing() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> userService.getById(99L));
-
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        assertThrows(NotFoundException.class, () -> userService.getById(99L));
     }
 
     @Test
