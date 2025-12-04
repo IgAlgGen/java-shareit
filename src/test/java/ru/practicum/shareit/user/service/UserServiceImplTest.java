@@ -1,4 +1,4 @@
-package ru.practicum.shareit.user.repository.service;
+package ru.practicum.shareit.user.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,8 +17,8 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import ru.practicum.shareit.exception.ConflictException;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.model.User;
@@ -41,7 +41,7 @@ class UserServiceImplTest {
     @Test
     void create_shouldPersistUserWhenEmailIsUnique() {
         UserDto input = new UserDto(null, "Иван", "ivan@example.com");
-        when(userRepository.existingUserEmail(any(User.class))).thenReturn(false);
+        when(userRepository.existsByEmail("ivan@example.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User argument = invocation.getArgument(0);
             argument.setId(1L);
@@ -54,20 +54,18 @@ class UserServiceImplTest {
         assertEquals("Иван", result.getName());
         assertEquals("ivan@example.com", result.getEmail());
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).existingUserEmail(any(User.class));
+        verify(userRepository).existsByEmail("ivan@example.com");
         verify(userRepository).save(captor.capture());
         verifyNoMoreInteractions(userRepository);
     }
 
     @Test
     void create_shouldThrowConflictWhenEmailExists() {
-        when(userRepository.existingUserEmail(any(User.class))).thenReturn(true);
+        when(userRepository.existsByEmail("ivan@example.com")).thenReturn(true);
         UserDto input = new UserDto(null, "Иван", "ivan@example.com");
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> userService.create(input));
-
-        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-        verify(userRepository).existingUserEmail(any(User.class));
+        assertThrows(ConflictException.class, () -> userService.create(input));
+        verify(userRepository).existsByEmail("ivan@example.com");
         verifyNoMoreInteractions(userRepository);
     }
 
@@ -77,8 +75,8 @@ class UserServiceImplTest {
         UserDto patch = new UserDto(userId, "Другое Имя", "new@example.com");
         User stored = new User(userId, "Иван", "ivan@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.of(stored));
-        when(userRepository.existingUserEmail(any(User.class))).thenReturn(false);
-        when(userRepository.update(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         UserDto result = userService.update(userId, patch);
 
@@ -86,8 +84,8 @@ class UserServiceImplTest {
         assertEquals("Другое Имя", result.getName());
         assertEquals("new@example.com", result.getEmail());
         verify(userRepository).findById(userId);
-        verify(userRepository).existingUserEmail(any(User.class));
-        verify(userRepository).update(any(User.class));
+        verify(userRepository).existsByEmail("new@example.com");
+        verify(userRepository).save(any(User.class));
     }
 
     @Test
@@ -95,21 +93,17 @@ class UserServiceImplTest {
         Long userId = 1L;
         User stored = new User(userId, "Иван", "ivan@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.of(stored));
-        when(userRepository.existingUserEmail(any(User.class))).thenReturn(true);
+        when(userRepository.existsByEmail("roman@example.com")).thenReturn(true);
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        assertThrows(ConflictException.class,
                 () -> userService.update(userId, new UserDto(userId, "Роман", "roman@example.com")));
-
-        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
     }
 
     @Test
     void getById_shouldThrowNotFoundWhenUserMissing() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> userService.getById(99L));
-
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        assertThrows(NotFoundException.class, () -> userService.getById(99L));
     }
 
     @Test
