@@ -71,12 +71,7 @@
 	</dependencies>
 
 	<build>
-		<resources>
-			<resource>
-				<directory>server/src/main/resources</directory>
-				<filtering>true</filtering>
-			</resource>
-		</resources>
+
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
