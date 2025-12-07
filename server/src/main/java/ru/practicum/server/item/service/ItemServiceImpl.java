@@ -15,7 +15,6 @@ import ru.practicum.server.booking.model.BookingStatus;
 import ru.practicum.server.booking.repository.BookingRepository;
 import ru.practicum.server.item.dto.CommentDto;
 import ru.practicum.server.item.dto.BookingDatesDto;
-import ru.practicum.server.item.dto.ItemDetailsDto;
 import ru.practicum.server.item.dto.ItemDto;
 import ru.practicum.server.item.dto.ItemMapper;
 import ru.practicum.server.item.dto.ItemWithBookingsDto;
