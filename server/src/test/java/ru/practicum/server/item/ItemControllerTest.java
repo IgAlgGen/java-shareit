@@ -1,101 +1,104 @@
 package ru.practicum.server.item;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.practicum.server.item.dto.CommentDto;
 import ru.practicum.server.item.dto.ItemDto;
 import ru.practicum.server.item.dto.ItemWithBookingsDto;
 import ru.practicum.server.item.service.ItemService;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(ItemController.class)
 class ItemControllerTest {
-    @Mock
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockBean
     private ItemService itemService;
 
-    private ItemController controller;
-
-    @BeforeEach
-    void setUp() {
-        controller = new ItemController(itemService);
-    }
-
     @Test
-    void create_shouldDelegateToService() {
+    void create_shouldDelegateToService() throws Exception {
         ItemDto request = new ItemDto(null, "Drill", "Powerful", true, null);
-        ItemDto response = new ItemDto(1L, "Drill", "Powerful", true, null);
-        when(itemService.create(1L, request)).thenReturn(response);
+        when(itemService.create(eq(1L), any(ItemDto.class))).thenReturn(new ItemDto(1L, "Drill", "Powerful", true, null));
 
-        ItemDto result = controller.create(1L, request);
-
-        assertEquals(response, result);
-        verify(itemService).create(1L, request);
+        mockMvc.perform(post("/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Sharer-User-Id", 1)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
-    void update_shouldDelegateToService() {
-        ItemDto request = new ItemDto(null, "Дрель", "Сильная", true, null);
-        ItemDto response = new ItemDto(1L, "Дрель", "Сильная", false, null);
-        when(itemService.update(1L, 2L, request)).thenReturn(response);
+    void update_shouldReturnUpdatedItem() throws Exception {
+        when(itemService.update(eq(1L), eq(2L), any(ItemDto.class)))
+                .thenReturn(new ItemDto(2L, "Updated", "Powerful", true, null));
 
-        ItemDto result = controller.update(1L, 2L, request);
-
-        assertEquals(response, result);
-        verify(itemService).update(1L, 2L, request);
+        mockMvc.perform(patch("/items/2")
+                        .header("X-Sharer-User-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated"));
     }
 
     @Test
-    void getById_shouldReturnServiceResult() {
-        ItemWithBookingsDto response = new ItemWithBookingsDto(1L, "Дрель", "Сильная", true,
-                null, null, null, List.of());
-        when(itemService.getById(1L, 2L)).thenReturn(response);
+    void getById_shouldReturnItem() throws Exception {
+        when(itemService.getById(1L, 2L)).thenReturn(new ItemWithBookingsDto(2L, "Drill", "Powerful", true, null, null, null, List.of()));
 
-        ItemWithBookingsDto result = controller.getById(1L, 2L);
-
-        assertEquals(response, result);
-        verify(itemService).getById(1L, 2L);
+        mockMvc.perform(get("/items/2").header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(2));
     }
 
     @Test
-    void getOwnerItems_shouldReturnServiceResult() {
-        List<ItemWithBookingsDto> items = List.of(new ItemWithBookingsDto(1L, "Дрель", "Сильная", true,
-                null, null, null, List.of()));
-        when(itemService.getOwnerItems(3L)).thenReturn(items);
+    void getOwnerItems_shouldReturnList() throws Exception {
+        when(itemService.getOwnerItems(1L)).thenReturn(List.of(new ItemWithBookingsDto(1L, "Drill", "Powerful", true, null, null, null, List.of())));
 
-        List<ItemWithBookingsDto> result = controller.getOwnerItems(3L);
-
-        assertEquals(items, result);
-        verify(itemService).getOwnerItems(3L);
+        mockMvc.perform(get("/items").header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1));
     }
 
     @Test
-    void search_shouldReturnServiceResult() {
-        List<ItemWithBookingsDto> items = List.of(new ItemWithBookingsDto(1L, "Дрель", "Сильная", true,
-                null, null, null, List.of()));
-        when(itemService.search("text")).thenReturn(items);
+    void search_shouldCallService() throws Exception {
+        when(itemService.search("текст")).thenReturn(List.of());
 
-        List<ItemWithBookingsDto> result = controller.search("text");
+        mockMvc.perform(get("/items/search").param("text", "текст"))
+                .andExpect(status().isOk());
 
-        assertEquals(items, result);
-        verify(itemService).search("text");
+        verify(itemService).search("текст");
     }
 
     @Test
-    void addComment_shouldDelegateToService() {
-        CommentDto request = new CommentDto(null, "Отличная вещь", null, null);
-        CommentDto response = new CommentDto(1L, "Отличная вещь", "Иван", null);
-        when(itemService.addComment(5L, 2L, request)).thenReturn(response);
+    void addComment_shouldReturnCreatedComment() throws Exception {
+        CommentDto response = new CommentDto(1L, "текст", "Иван", null);
+        when(itemService.addComment(eq(1L), eq(2L), any(CommentDto.class))).thenReturn(response);
 
-        CommentDto result = controller.addComment(5L, 2L, request);
-
-        assertEquals(response, result);
-        verify(itemService).addComment(5L, 2L, request);
+        mockMvc.perform(post("/items/2/comment")
+                        .header("X-Sharer-User-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CommentDto(null, "текст", null, null))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
     }
 }

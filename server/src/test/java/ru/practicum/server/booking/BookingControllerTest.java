@@ -1,92 +1,90 @@
 package ru.practicum.server.booking;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.practicum.server.booking.dto.BookingDto;
-import ru.practicum.server.booking.model.BookingStatus;
 import ru.practicum.server.booking.service.BookingService;
+import ru.practicum.server.booking.model.BookingStatus;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(BookingController.class)
 class BookingControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockBean
     private BookingService bookingService;
 
-    private BookingController controller;
+    @Test
+    void create_shouldReturnBooking() throws Exception {
+        BookingDto request = new BookingDto(null, LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2), 1L, null, null, null, null);
+        when(bookingService.create(eq(1L), any(BookingDto.class))).thenReturn(new BookingDto(1L, request.getStart(), request.getEnd(), 1L, 1L, BookingStatus.WAITING, null, null));
 
-    @BeforeEach
-    void setUp() {
-        controller = new BookingController(bookingService);
+        mockMvc.perform(post("/bookings")
+                        .header("X-Sharer-User-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
-    void create_shouldDelegateToService() {
-        BookingDto request = new BookingDto(null, LocalDateTime.now().plusDays(1),
-                LocalDateTime.now().plusDays(2), 3L, null, null, null, null);
-        BookingDto response = new BookingDto(1L, request.getStart(), request.getEnd(), 3L, 5L,
-                BookingStatus.WAITING, null, null);
-        when(bookingService.create(5L, request)).thenReturn(response);
+    void updateStatus_shouldReturnUpdatedBooking() throws Exception {
+        when(bookingService.updateStatus(1L, 2L, true)).thenReturn(new BookingDto(2L, LocalDateTime.now(), LocalDateTime.now().plusDays(1), 1L, 1L, BookingStatus.APPROVED, null, null));
 
-        BookingDto result = controller.create(5L, request);
-
-        assertEquals(response, result);
-        verify(bookingService).create(5L, request);
+        mockMvc.perform(patch("/bookings/2")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("approved", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(BookingStatus.APPROVED.toString()));
     }
 
     @Test
-    void updateStatus_shouldPassParametersToService() {
-        BookingDto response = new BookingDto(2L, LocalDateTime.now(), LocalDateTime.now().plusDays(1),
-                7L, 4L, BookingStatus.APPROVED, null, null);
-        when(bookingService.updateStatus(9L, 2L, true)).thenReturn(response);
+    void getById_shouldReturnBooking() throws Exception {
+        when(bookingService.getById(1L, 2L)).thenReturn(new BookingDto(2L, LocalDateTime.now(), LocalDateTime.now().plusDays(1), 1L, 1L, BookingStatus.APPROVED, null, null));
 
-        BookingDto result = controller.updateStatus(9L, 2L, true);
-
-        assertEquals(response, result);
-        verify(bookingService).updateStatus(9L, 2L, true);
+        mockMvc.perform(get("/bookings/2").header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(2));
     }
 
     @Test
-    void getById_shouldReturnServiceResult() {
-        BookingDto response = new BookingDto(3L, LocalDateTime.now(), LocalDateTime.now().plusDays(1),
-                7L, 4L, BookingStatus.APPROVED, null, null);
-        when(bookingService.getById(4L, 3L)).thenReturn(response);
+    void getUserBookings_shouldReturnList() throws Exception {
+        when(bookingService.getBookerBookings(1L, "ALL")).thenReturn(List.of());
 
-        BookingDto result = controller.getById(4L, 3L);
+        mockMvc.perform(get("/bookings").header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
 
-        assertEquals(response, result);
-        verify(bookingService).getById(4L, 3L);
+        verify(bookingService).getBookerBookings(1L, "ALL");
     }
 
     @Test
-    void getUserBookings_shouldReturnServiceResult() {
-        List<BookingDto> bookings = List.of(new BookingDto(1L, LocalDateTime.now(), LocalDateTime.now().plusDays(1),
-                7L, 4L, BookingStatus.APPROVED, null, null));
-        when(bookingService.getBookerBookings(4L, "ALL")).thenReturn(bookings);
+    void getOwnerBookings_shouldReturnList() throws Exception {
+        when(bookingService.getOwnerBookings(1L, "ALL")).thenReturn(List.of());
 
-        List<BookingDto> result = controller.getUserBookings(4L, "ALL");
+        mockMvc.perform(get("/bookings/owner").header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
 
-        assertEquals(bookings, result);
-        verify(bookingService).getBookerBookings(4L, "ALL");
-    }
-
-    @Test
-    void getOwnerBookings_shouldReturnServiceResult() {
-        List<BookingDto> bookings = List.of(new BookingDto(1L, LocalDateTime.now(), LocalDateTime.now().plusDays(1),
-                7L, 4L, BookingStatus.APPROVED, null, null));
-        when(bookingService.getOwnerBookings(9L, "FUTURE")).thenReturn(bookings);
-
-        List<BookingDto> result = controller.getOwnerBookings(9L, "FUTURE");
-
-        assertEquals(bookings, result);
-        verify(bookingService).getOwnerBookings(9L, "FUTURE");
+        verify(bookingService).getOwnerBookings(1L, "ALL");
     }
 }

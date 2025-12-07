@@ -1,81 +1,84 @@
 package ru.practicum.server.user;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.practicum.server.user.dto.UserDto;
 import ru.practicum.server.user.service.UserService;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(UserController.class)
 class UserControllerTest {
-    @Mock
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockBean
     private UserService userService;
 
-    private UserController controller;
+    @Test
+    void create_shouldReturnCreatedUser() throws Exception {
+        when(userService.create(any(UserDto.class))).thenReturn(new UserDto(1L, "Алиса", "alice@example.com"));
 
-    @BeforeEach
-    void setUp() {
-        controller = new UserController(userService);
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new UserDto(null, "Алиса", "alice@example.com"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
-    void create_shouldDelegateToService() {
-        UserDto request = new UserDto(null, "Alice", "alice@example.com");
-        UserDto response = new UserDto(1L, "Alice", "alice@example.com");
-        when(userService.create(any(UserDto.class))).thenReturn(response);
+    void update_shouldReturnUpdatedUser() throws Exception {
+        when(userService.update(eq(1L), any(UserDto.class))).thenReturn(new UserDto(1L, "Алиса", "alice@example.com"));
 
-        UserDto result = controller.create(request);
-
-        assertEquals(response, result);
-        verify(userService).create(request);
+        mockMvc.perform(patch("/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Алиса"));
     }
 
     @Test
-    void update_shouldDelegateToService() {
-        UserDto patch = new UserDto(null, "Alice", "alice@example.com");
-        UserDto response = new UserDto(1L, "Alice", "alice@example.com");
-        when(userService.update(1L, patch)).thenReturn(response);
+    void getById_shouldReturnUser() throws Exception {
+        when(userService.getById(1L)).thenReturn(new UserDto(1L, "Алиса", "alice@example.com"));
 
-        UserDto result = controller.update(1L, patch);
-
-        assertEquals(response, result);
-        verify(userService).update(1L, patch);
+        mockMvc.perform(get("/users/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("alice@example.com"));
     }
 
     @Test
-    void getById_shouldReturnServiceResult() {
-        UserDto response = new UserDto(2L, "Bob", "bob@example.com");
-        when(userService.getById(2L)).thenReturn(response);
+    void getAll_shouldReturnUsers() throws Exception {
+        when(userService.getAll()).thenReturn(List.of(new UserDto(1L, "Alice", "alice@example.com")));
 
-        UserDto result = controller.getById(2L);
-
-        assertEquals(response, result);
-        verify(userService).getById(2L);
+        mockMvc.perform(get("/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1));
     }
 
     @Test
-    void getAll_shouldReturnServiceResult() {
-        List<UserDto> users = List.of(new UserDto(1L, "Alice", "alice@example.com"));
-        when(userService.getAll()).thenReturn(users);
+    void delete_shouldCallService() throws Exception {
+        mockMvc.perform(delete("/users/1"))
+                .andExpect(status().isOk());
 
-        List<UserDto> result = controller.getAll();
-
-        assertEquals(users, result);
-        verify(userService).getAll();
-    }
-
-    @Test
-    void delete_shouldInvokeService() {
-        controller.delete(5L);
-
-        verify(userService).delete(5L);
+        verify(userService).delete(1L);
     }
 }
