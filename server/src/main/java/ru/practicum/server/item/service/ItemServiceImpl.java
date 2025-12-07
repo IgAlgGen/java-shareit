@@ -162,16 +162,6 @@ public class ItemServiceImpl implements ItemService {
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
     }
 
-    private ItemDetailsDto toDetailsDto(Item item) {
-        List<CommentDto> comments = getCommentsForItem(item.getId());
-        return toDetailsDto(item, comments);
-    }
-
-    private ItemDetailsDto toDetailsDto(Item item, List<CommentDto> comments) {
-        return new ItemDetailsDto(item.getId(), item.getName(), item.getDescription(),
-                item.getAvailable(), item.getRequestId(), comments);
-    }
-
     private ItemWithBookingsDto toItemWithBookings(Item item, List<CommentDto> comments) {
         List<Booking> bookings = bookingRepository.findByItem_Id(item.getId(), Sort.by("start"));
         LocalDateTime now = LocalDateTime.now();

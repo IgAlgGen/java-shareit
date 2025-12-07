@@ -86,26 +86,14 @@ public class BookingServiceImpl implements BookingService {
         Sort sort = Sort.by(Sort.Direction.DESC, "start");
         LocalDateTime now = LocalDateTime.now();
 
-        List<Booking> bookings;
-        switch (bookingState) {
-            case CURRENT:
-                bookings = bookingRepository.findByBooker_IdAndStartBeforeAndEndAfter(bookerId, now, now, sort);
-                break;
-            case PAST:
-                bookings = bookingRepository.findByBooker_IdAndEndIsBefore(bookerId, now, sort);
-                break;
-            case FUTURE:
-                bookings = bookingRepository.findByBooker_IdAndStartIsAfter(bookerId, now, sort);
-                break;
-            case WAITING:
-                bookings = bookingRepository.findByBooker_IdAndStatus(bookerId, BookingStatus.WAITING, sort);
-                break;
-            case REJECTED:
-                bookings = bookingRepository.findByBooker_IdAndStatus(bookerId, BookingStatus.REJECTED, sort);
-                break;
-            default:
-                bookings = bookingRepository.findByBooker_Id(bookerId, sort);
-        }
+        List<Booking> bookings = switch (bookingState) {
+            case CURRENT -> bookingRepository.findByBooker_IdAndStartBeforeAndEndAfter(bookerId, now, now, sort);
+            case PAST -> bookingRepository.findByBooker_IdAndEndIsBefore(bookerId, now, sort);
+            case FUTURE -> bookingRepository.findByBooker_IdAndStartIsAfter(bookerId, now, sort);
+            case WAITING -> bookingRepository.findByBooker_IdAndStatus(bookerId, BookingStatus.WAITING, sort);
+            case REJECTED -> bookingRepository.findByBooker_IdAndStatus(bookerId, BookingStatus.REJECTED, sort);
+            default -> bookingRepository.findByBooker_Id(bookerId, sort);
+        };
         return bookings.stream()
                 .map(bookingMapper::toDto)
                 .collect(Collectors.toList());
@@ -118,26 +106,14 @@ public class BookingServiceImpl implements BookingService {
         Sort sort = Sort.by(Sort.Direction.DESC, "start");
         LocalDateTime now = LocalDateTime.now();
 
-        List<Booking> bookings;
-        switch (bookingState) {
-            case CURRENT:
-                bookings = bookingRepository.findCurrentByOwnerId(ownerId, now, now, sort);
-                break;
-            case PAST:
-                bookings = bookingRepository.findPastByOwnerId(ownerId, now, sort);
-                break;
-            case FUTURE:
-                bookings = bookingRepository.findFutureByOwnerId(ownerId, now, sort);
-                break;
-            case WAITING:
-                bookings = bookingRepository.findByOwnerIdAndStatus(ownerId, BookingStatus.WAITING, sort);
-                break;
-            case REJECTED:
-                bookings = bookingRepository.findByOwnerIdAndStatus(ownerId, BookingStatus.REJECTED, sort);
-                break;
-            default:
-                bookings = bookingRepository.findByOwnerId(ownerId, sort);
-        }
+        List<Booking> bookings = switch (bookingState) {
+            case CURRENT -> bookingRepository.findCurrentByOwnerId(ownerId, now, now, sort);
+            case PAST -> bookingRepository.findPastByOwnerId(ownerId, now, sort);
+            case FUTURE -> bookingRepository.findFutureByOwnerId(ownerId, now, sort);
+            case WAITING -> bookingRepository.findByOwnerIdAndStatus(ownerId, BookingStatus.WAITING, sort);
+            case REJECTED -> bookingRepository.findByOwnerIdAndStatus(ownerId, BookingStatus.REJECTED, sort);
+            default -> bookingRepository.findByOwnerId(ownerId, sort);
+        };
         return bookings.stream()
                 .map(bookingMapper::toDto)
                 .collect(Collectors.toList());
